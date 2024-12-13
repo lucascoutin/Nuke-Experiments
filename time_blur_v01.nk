@@ -1,0 +1,907 @@
+#! C:/Program Files/Nuke15.0v4/nuke-15.0.4.dll -nx
+#write_info Write1 file:"output/timeblur_%04d.jpg" format:"1920 1080 1" chans:":rgba.red:rgba.green:rgba.blue:" framerange:"1 120" fps:"0" colorspace:"default (matte_paint)" datatype:"8 bit" transfer:"unknown" views:"main" colorManagement:"OCIO"
+version 15.0 v4
+define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
+<layout version="1.0">
+    <window x="-1" y="-8" w="1920" h="1027" maximized="1" screen="0">
+        <splitter orientation="1">
+            <split size="40"/>
+            <dock id="" hideTitles="1" activePageId="Toolbar.1">
+                <page id="Toolbar.1"/>
+            </dock>
+            <split size="1876" stretch="1"/>
+            <splitter orientation="1">
+                <split size="1172"/>
+                <splitter orientation="2">
+                    <split size="989"/>
+                    <dock id="" activePageId="Viewer.1">
+                        <page id="Viewer.1"/>
+                    </dock>
+                </splitter>
+                <split size="700"/>
+                <dock id="" activePageId="DAG.1" focus="true">
+                    <page id="DAG.1"/>
+                    <page id="Curve Editor.1"/>
+                    <page id="DopeSheet.1"/>
+                </dock>
+            </splitter>
+        </splitter>
+    </window>
+</layout>
+}
+Root {
+ inputs 0
+ name D:/COUTINHO/study/nuke/timeblur/time_blur_v01.nk
+ project_directory "\[python \{nuke.script_directory()\}]"
+ frame 120
+ last_frame 120
+ format "1920 1080 0 0 1920 1080 1 HD_1080"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+ colorManagement OCIO
+ OCIO_config fn-nuke_studio-config-v1.0.0_aces-v1.3_ocio-v2.1
+ defaultViewerLUT "OCIO LUTs"
+ workingSpaceLUT scene_linear
+ monitorLut "ACES 1.0 - SDR Video (sRGB - Display)"
+ monitorOutLUT "ACES 1.0 - SDR Video (sRGB - Display)"
+ int8Lut matte_paint
+ int16Lut texture_paint
+ logLut compositing_log
+ floatLut scene_linear
+}
+Reformat {
+ inputs 0
+ format "3840 2160 0 0 3840 2160 1 UHD_4K"
+ name Reformat1
+ xpos -40
+ ypos -1056
+}
+Dot {
+ name Dot8
+ xpos -6
+ ypos -898
+}
+set Nb7659000 [stack 0]
+Dot {
+ name Dot12
+ xpos -263
+ ypos -898
+}
+set Nb7658c00 [stack 0]
+Dot {
+ name Dot10
+ xpos -515
+ ypos -898
+}
+set Nb7658800 [stack 0]
+Dot {
+ name Dot9
+ xpos -747
+ ypos -898
+}
+set Nb7658400 [stack 0]
+Dot {
+ name Dot11
+ xpos -980
+ ypos -898
+}
+Expression {
+ channel0 rgba
+ expr0 "sin(atan(x-width/2,y-height/2)*int(offset) + frame*speed) * str"
+ channel1 {-rgba.red rgba.green -rgba.blue none}
+ channel2 {-rgba.red -rgba.green rgba.blue none}
+ name ArcTan
+ xpos -1014
+ ypos -671
+ addUserKnob {20 User}
+ addUserKnob {7 offset l Offset R 0 100}
+ offset 2
+ addUserKnob {7 speed l Speed}
+ speed 0.1
+ addUserKnob {7 str l Strenght R 0 10}
+ str 5.95
+}
+Dot {
+ name Dot2
+ xpos -980
+ ypos -51
+}
+push $Nb7658400
+Expression {
+ channel0 rgba
+ expr0 "clamp(radius - hypot(x-width/2,y-height/2))"
+ name Circle
+ xpos -781
+ ypos -675
+ addUserKnob {20 User}
+ addUserKnob {7 radius l Radius R 0 1000}
+ radius 600
+}
+Dot {
+ name Dot3
+ xpos -747
+ ypos -446
+}
+push $Nb7658800
+Expression {
+ channel0 rgba
+ expr0 "clamp(sin((hypot(x-width/2,y-height/2)/offset) - frame*speed))"
+ name Ripples
+ xpos -549
+ ypos -676
+ addUserKnob {20 User}
+ addUserKnob {7 offset l Offset R 0 100}
+ offset 25
+ addUserKnob {7 speed l Speed}
+ speed 0.3
+}
+ColorLookup {
+ lut {master {curve C 0 k x0.1643468738 1 s0}
+   red {}
+   green {}
+   blue {}
+   alpha {}}
+ name ColorLookup2
+ xpos -549
+ ypos -636
+}
+Merge2 {
+ inputs 2
+ operation multiply
+ bbox B
+ name Merge2
+ xpos -549
+ ypos -449
+}
+Dot {
+ name Dot7
+ xpos -515
+ ypos -249
+}
+push $Nb7658c00
+Expression {
+ channel0 rgb
+ expr0 "clamp((x-width/2) % ceil(size) == 0) * ((y-height/2) % ceil(size) == 0)"
+ name Spheres
+ xpos -297
+ ypos -766
+ addUserKnob {20 User}
+ addUserKnob {7 size l Size R 0 300}
+ size {{parent.Grid.size}}
+}
+Dilate {
+ size {{parent.Grid.size*0.05}}
+ name Dilate1
+ xpos -297
+ ypos -726
+}
+Blur {
+ size {{parent.Grid.size/12}}
+ filter quadratic
+ name Blur1
+ xpos -297
+ ypos -674
+}
+ColorLookup {
+ lut {master {curve C x0.1070636436 0 x0.1170636415 1}
+   red {}
+   green {}
+   blue {}
+   alpha {}}
+ name ColorLookup1
+ xpos -297
+ ypos -622
+}
+Clamp {
+ name Clamp1
+ xpos -297
+ ypos -582
+}
+Dot {
+ name Dot1
+ xpos -263
+ ypos -443
+}
+push $Nb7659000
+Expression {
+ channel0 rgb
+ expr0 "clamp(((x-width/2) % ceil(size) == 0) + ((y-height/2) % ceil(size) == 0))"
+ name Grid
+ xpos -40
+ ypos -766
+ addUserKnob {20 User}
+ addUserKnob {7 size l Size R 0 500}
+ size 200
+}
+Merge2 {
+ inputs 2
+ operation screen
+ bbox B
+ name Merge1
+ xpos -40
+ ypos -446
+}
+Merge2 {
+ inputs 2
+ operation max
+ bbox B
+ name Merge4
+ xpos -40
+ ypos -252
+}
+NoTimeBlur {
+ name NoTimeBlur1
+ xpos -40
+ ypos -94
+}
+Shuffle2 {
+ inputs 2
+ fromInput1 {{1} B A}
+ out1 forward
+ fromInput2 {{0} B A}
+ mappings "2 rgba.red 0 0 forward.u 0 0 rgba.green 0 1 forward.v 0 1"
+ name Shuffle1
+ xpos -40
+ ypos -54
+}
+IDistort {
+ uv forward
+ uv_scale 60
+ name IDistort1
+ xpos -40
+ ypos 103
+}
+Reformat {
+ resize none
+ name Reformat2
+ xpos -40
+ ypos 155
+}
+Dot {
+ name Dot4
+ xpos -6
+ ypos 308
+}
+set Nb7330800 [stack 0]
+Dot {
+ name Dot5
+ xpos -263
+ ypos 308
+}
+Group {
+ name Glowing
+ tile_color 0xff
+ xpos -297
+ ypos 417
+ addUserKnob {20 Glowing}
+ addUserKnob {68 math l Math t "Exponential glow math types." M {Exponential "Inverse Square Law"}}
+ addUserKnob {41 pre_blur l "Pre Edge Blur" t "Pre edge blur." T EdgeBlur1.size}
+ addUserKnob {6 glow l "Generate Glow Only" t "Glow only effect." +STARTLINE}
+ glow true
+ addUserKnob {26 ""}
+ addUserKnob {7 size_master l Size t "Control glow size." R 0 100}
+ size_master 0.5
+ addUserKnob {7 strength l Strength t "Control glow intensity." R 0 10}
+ strength 0.05
+ addUserKnob {41 value l Colorize T Multiply13.value}
+ addUserKnob {41 saturation l Saturation T Saturation1.saturation}
+ addUserKnob {20 info l Info}
+ addUserKnob {26 description l "" +STARTLINE T "Exponential glow with different math options."}
+ addUserKnob {26 ""}
+ addUserKnob {26 text_1 l "" +STARTLINE T "Created by <b><a href=\"https://vimeo.com/lucascoutinho\">Lucas L. Coutinho</a></b>"}
+ addUserKnob {26 text_2 l "" +STARTLINE T "Version: <b>v06</b>"}
+ addUserKnob {26 text_3 l "" +STARTLINE T "Year: 2024"}
+}
+ StickyNote {
+  inputs 0
+  name StickyNote3
+  tile_color 0xff
+  label "Inverse Square Law"
+  note_font_size 60
+  xpos 1060
+  ypos 41
+ }
+ StickyNote {
+  inputs 0
+  name StickyNote1
+  tile_color 0xff
+  label Exponential
+  note_font_size 60
+  xpos 2007
+  ypos 44
+ }
+ Input {
+  inputs 0
+  name Source
+  xpos 2951
+  ypos -545
+ }
+ EdgeBlur {
+  size 0
+  name EdgeBlur1
+  xpos 2951
+  ypos -398
+ }
+ Dot {
+  name Dot2
+  xpos 2985
+  ypos -220
+ }
+set Nb535e800 [stack 0]
+push $Nb535e800
+ Dot {
+  name Dot7
+  xpos 1071
+  ypos -220
+ }
+ Multiply {
+  name Multiply13
+  xpos 1037
+  ypos -82
+ }
+ Dot {
+  name Dot15
+  xpos 1071
+  ypos 177
+ }
+set Nb5323c00 [stack 0]
+ Dot {
+  name Dot16
+  xpos 1181
+  ypos 177
+ }
+set Nb5323800 [stack 0]
+ Dot {
+  name Dot17
+  xpos 1291
+  ypos 177
+ }
+set Nb5323400 [stack 0]
+ Dot {
+  name Dot18
+  xpos 1401
+  ypos 177
+ }
+set Nb5323000 [stack 0]
+ Dot {
+  name Dot19
+  xpos 1503
+  ypos 177
+ }
+set Nb5047400 [stack 0]
+ Dot {
+  name Dot9
+  xpos 1613
+  ypos 177
+ }
+set Nb5047000 [stack 0]
+ Blur {
+  size {{parent.Blur10.size*2}}
+  name Blur1
+  xpos 1579
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply7.value/pow(6,2)}}
+  name Multiply1
+  xpos 1579
+  ypos 263
+ }
+push $Nb5323800
+ Blur {
+  size {{parent.Blur7.size*2}}
+  name Blur6
+  xpos 1147
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply7.value/pow(2,2)}}
+  name Multiply6
+  xpos 1147
+  ypos 263
+ }
+push $Nb5323c00
+ Blur {
+  size {{size_master}}
+  name Blur7
+  xpos 1037
+  ypos 211
+ }
+ Multiply {
+  value {{strength}}
+  name Multiply7
+  xpos 1037
+  ypos 263
+ }
+push $Nb5323400
+ Blur {
+  size {{parent.Blur6.size*2}}
+  name Blur8
+  xpos 1257
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply7.value/pow(3,2)}}
+  name Multiply8
+  xpos 1257
+  ypos 263
+ }
+push 0
+push $Nb5323000
+ Blur {
+  size {{parent.Blur8.size*2}}
+  name Blur9
+  xpos 1367
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply7.value/pow(4,2)}}
+  name Multiply9
+  xpos 1367
+  ypos 263
+ }
+push $Nb5047400
+ Blur {
+  size {{parent.Blur9.size*2}}
+  name Blur10
+  xpos 1469
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply7.value/pow(5,2)}}
+  name Multiply10
+  xpos 1469
+  ypos 263
+ }
+ Merge2 {
+  inputs 6+1
+  operation plus
+  name Plus1
+  xpos 1304
+  ypos 508
+ }
+ Dot {
+  name Dot4
+  xpos 1338
+  ypos 666
+ }
+push $Nb5047000
+ Dot {
+  name Dot10
+  xpos 1909
+  ypos 177
+ }
+set Nd7452000 [stack 0]
+ Dot {
+  name Dot11
+  xpos 2019
+  ypos 177
+ }
+set Nb7515c00 [stack 0]
+ Dot {
+  name Dot12
+  xpos 2129
+  ypos 177
+ }
+set Nb7515800 [stack 0]
+ Dot {
+  name Dot13
+  xpos 2239
+  ypos 177
+ }
+set Nb7515000 [stack 0]
+ Dot {
+  name Dot14
+  xpos 2341
+  ypos 177
+ }
+set Nb7515400 [stack 0]
+ Dot {
+  name Dot20
+  xpos 2451
+  ypos 177
+ }
+ Blur {
+  size {{parent.Blur11.size*2}}
+  name Blur12
+  xpos 2417
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply3.value*2}}
+  name Multiply12
+  xpos 2417
+  ypos 263
+ }
+push $Nb7515c00
+ Blur {
+  size {{parent.Blur3.size*2}}
+  name Blur2
+  xpos 1985
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply3.value*2}}
+  name Multiply2
+  xpos 1985
+  ypos 263
+ }
+push $Nd7452000
+ Blur {
+  size {{size_master}}
+  name Blur3
+  xpos 1875
+  ypos 211
+ }
+ Multiply {
+  value {{strength}}
+  name Multiply3
+  xpos 1875
+  ypos 263
+ }
+push $Nb7515800
+ Blur {
+  size {{parent.Blur2.size*2}}
+  name Blur4
+  xpos 2095
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply3.value*2}}
+  name Multiply4
+  xpos 2095
+  ypos 263
+ }
+push 0
+push $Nb7515000
+ Blur {
+  size {{parent.Blur4.size*2}}
+  name Blur5
+  xpos 2205
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply3.value*2}}
+  name Multiply5
+  xpos 2205
+  ypos 263
+ }
+push $Nb7515400
+ Blur {
+  size {{parent.Blur5.size*2}}
+  name Blur11
+  xpos 2307
+  ypos 211
+ }
+ Multiply {
+  value {{parent.Multiply3.value*2}}
+  name Multiply11
+  xpos 2307
+  ypos 263
+ }
+ Merge2 {
+  inputs 6+1
+  operation plus
+  name Plus2
+  xpos 2156
+  ypos 504
+ }
+ Switch {
+  inputs 2
+  which {{math}}
+  name Switch4
+  xpos 2156
+  ypos 663
+ }
+ Saturation {
+  name Saturation1
+  xpos 2156
+  ypos 811
+ }
+ Dot {
+  name Dot6
+  xpos 2190
+  ypos 965
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name Merge1
+  xpos 2951
+  ypos 962
+  disable {{glow}}
+ }
+ Output {
+  name Output1
+  xpos 2951
+  ypos 1223
+ }
+end_group
+Dot {
+ name Dot6
+ xpos -263
+ ypos 524
+}
+push $Nb7330800
+Merge2 {
+ inputs 2
+ operation max
+ bbox B
+ name Merge3
+ xpos -40
+ ypos 521
+}
+Clamp {
+ name Clamp2
+ xpos -40
+ ypos 678
+}
+Grade {
+ black 0.005
+ white {0.8274559379 0.8114559054 0.7954559326 1}
+ name Grade1
+ xpos -40
+ ypos 730
+}
+Group {
+ name GodsAberration
+ tile_color 0xff
+ xpos -40
+ ypos 770
+ addUserKnob {20 control l Controls}
+ addUserKnob {4 mode l Mode M {Combined Aberration}}
+ addUserKnob {7 tint l Tint t "Magenta to green shift." R -0.5 0.5}
+ tint 0.4
+ addUserKnob {7 temp l Temperature t "Blue to yellow shift." R -0.5 0.5}
+ temp -0.4
+ addUserKnob {26 ""}
+ addUserKnob {7 zoom l Zoom t "Lateral chromatic aberration." R -1 1}
+ zoom 0.3
+ addUserKnob {7 rot l Rotation t "Rotation color shift." R -1 1}
+ rot -0.06
+ addUserKnob {7 hori l Horizontal t "Longitudinal chromatic aberration, X-Axis." R -1 1}
+ hori 0.11
+ addUserKnob {7 vert l Vertical t "Longitudinal chromatic aberration, Y-Axis." R -1 1}
+ addUserKnob {3 stp l Quality t "Increase sampling value for better output. 5 is default."}
+ stp 5
+ addUserKnob {6 mx l Max -STARTLINE}
+ addUserKnob {26 ""}
+ addUserKnob {26 _6 l "" +STARTLINE T "<b>Center Point Control"}
+ addUserKnob {7 centerx l Horizontal t "Central point for zoom and rotation." R -1 1}
+ addUserKnob {7 centery l Vertical t "Central point for zoom and rotation." R -1 1}
+ addUserKnob {26 ""}
+ addUserKnob {7 def l Defocus t "Spherical chromatic aberration." R 0 4}
+ def 0.58
+ addUserKnob {7 shift l "Chroma Shift" t "Spherical color shift." R -1 1}
+ addUserKnob {26 ""}
+ addUserKnob {26 _1 l "" +STARTLINE T "Use after premultiplication."}
+ addUserKnob {20 info l Info}
+ addUserKnob {26 _2 l "" +STARTLINE T "​Lightweight tool that mimics most common lens aberrations."}
+ addUserKnob {26 ""}
+ addUserKnob {26 _4 l "" +STARTLINE T "Created by <b><a href=\"https://vimeo.com/lucascoutinho\">Lucas L. Coutinho</a></b>"}
+ addUserKnob {26 _3 l "" +STARTLINE T "Version: <b>v01"}
+ addUserKnob {26 _5 l "" +STARTLINE T "Year: 2024"}
+}
+ Input {
+  inputs 0
+  name Source
+  xpos -310
+  ypos -599
+ }
+ Remove {
+  operation keep
+  channels rgba
+  name Remove1
+  xpos -310
+  ypos -475
+ }
+ Dot {
+  name Dot3
+  xpos -276
+  ypos -364
+ }
+set Nb75ad800 [stack 0]
+ Dot {
+  name Dot1
+  xpos -721
+  ypos -361
+ }
+set Nb75ad400 [stack 0]
+ Dot {
+  name Dot2
+  xpos -876
+  ypos -361
+ }
+set Nb75ad000 [stack 0]
+ Dot {
+  name Dot8
+  xpos -1079
+  ypos -361
+ }
+ Expression {
+  channel0 rgb
+  expr0 "clamp(10 - hypot(x-pos.x, y-pos.y))"
+  name Expression1
+  xpos -1113
+  ypos -37
+  addUserKnob {20 User}
+  addUserKnob {12 pos l Position}
+  pos {{parent.GodRays1.center} {parent.GodRays1.center}}
+ }
+ Dot {
+  name Dot7
+  xpos -1079
+  ypos 292
+ }
+ Input {
+  inputs 0
+  name Mask
+  xpos -535
+  ypos -238
+  number 1
+ }
+ Dot {
+  name Dot6
+  xpos -501
+  ypos -150
+ }
+set Nb519bc00 [stack 0]
+ Dot {
+  name Dot9
+  xpos -501
+  ypos -110
+ }
+set Nb519b800 [stack 0]
+push $Nb519bc00
+push $Nb75ad400
+ Multiply {
+  channels rgba
+  value {{"tint + 0.5" x1 0.008} {"1 - value.r" x1 1.005} {"temp + 0.5" x1 0.51} {curve x1 0.5}}
+  value_panelDropped true
+  name Multiply1
+  xpos -755
+  ypos -193
+ }
+ GodRays {
+  inputs 1+1
+  channels rgba
+  translate {{parent.hori*10} {parent.vert*10}}
+  rotate {{parent.rot}}
+  scale {{1+parent.zoom/100}}
+  center {{"input.width/2 + centerx*width/2"} {"input.height/2 + centery*height/2"}}
+  steps {{parent.stp}}
+  max {{mx}}
+  name GodRays1
+  xpos -755
+  ypos -153
+ }
+ Defocus {
+  inputs 1+1
+  channels rgba
+  defocus {{"def - shift*def + def"}}
+  name Defocus1
+  xpos -755
+  ypos -113
+ }
+ Dot {
+  name Dot4
+  xpos -721
+  ypos 28
+ }
+push $Nb519b800
+push $Nb519bc00
+push $Nb75ad800
+ Multiply {
+  channels rgba
+  value {{0.5-tint} {"1 - GodsAberration.Multiply2.value.r" x1 0.2} {1-GodsAberration.Multiply1.value.b} {parent.Multiply1.value.a}}
+  value_panelDropped true
+  name Multiply2
+  xpos -310
+  ypos -193
+ }
+ GodRays {
+  inputs 1+1
+  channels rgba
+  translate {{-parent.GodRays1.translate} {-parent.GodRays1.translate}}
+  rotate {{-parent.GodRays1.rotate}}
+  scale {{1-parent.zoom/100}}
+  center {{parent.GodRays1.center} {parent.GodRays1.center}}
+  steps {{parent.stp}}
+  max {{mx}}
+  name GodRays2
+  xpos -310
+  ypos -153
+ }
+ Defocus {
+  inputs 1+1
+  channels rgba
+  defocus {{"def + shift*def + def"}}
+  name Defocus2
+  xpos -310
+  ypos -113
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name Merge1
+  xpos -310
+  ypos 22
+ }
+ Reformat {
+  type scale
+  resize none
+  black_outside true
+  name Reformat1
+  xpos -310
+  ypos 157
+ }
+set Nb5169400 [stack 0]
+push $Nb75ad000
+ Merge2 {
+  inputs 2
+  operation difference
+  bbox B
+  name Merge2
+  xpos -910
+  ypos 160
+ }
+ Merge2 {
+  inputs 2
+  operation screen
+  bbox B
+  name Merge3
+  xpos -910
+  ypos 289
+ }
+ Dot {
+  name Dot5
+  xpos -876
+  ypos 418
+ }
+push $Nb5169400
+ Switch {
+  inputs 2
+  which {{mode}}
+  name Switch1
+  xpos -310
+  ypos 412
+ }
+ Output {
+  name Output1
+  xpos -310
+  ypos 565
+ }
+end_group
+set Nb7431600 [stack 0]
+TimeBlur {
+ divisions 20
+ shutteroffset centred
+ shuttercustomoffset 0
+ name TimeBlur1
+ xpos -40
+ ypos 810
+}
+Write {
+ file output/timeblur_####.jpg
+ file_type jpeg
+ _jpeg_quality 1
+ create_directories true
+ checkHashOnRead false
+ version 20
+ ocioColorspace scene_linear
+ display "sRGB - Display"
+ view "ACES 1.0 - SDR Video"
+ name Write1
+ xpos -40
+ ypos 972
+}
+push $Nb7431600
+Viewer {
+ frame 120
+ frame_range 1-120
+ viewerProcess "ACES 1.0 - SDR Video (sRGB - Display)"
+ monitorOutNDISenderName "Nuke - time_blur_v01 - Viewer1"
+ name Viewer1
+ xpos 238
+ ypos 770
+}
